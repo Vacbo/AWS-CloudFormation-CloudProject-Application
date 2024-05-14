@@ -60,25 +60,25 @@ async def read_bets():
         </form>
         </body></html>
         """
-        html_content += """<h2>Apostas já criadas</h2>"""    
+        html_content += """<h2>Apostas já criadas</h2>"""
         for bet in bets:
-            html_content += f"<li><span style=\"font-weight: bold;\">{bet['Name']}</span> aposta que o Portella vai chegar as {bet['predicted_time']} - <a href='/update/{bet['Name']}'>Edit</a> - <a href='/delete/{bet['Name']}'>Delete</a></li>"
+            html_content += f"<li><span style=\"font-weight: bold;\">{bet['Name']}</span> aposta que o Portella vai chegar as <span style=\"font-weight: bold;\">{bet['predicted_time']}</span>  - <a href='/{bet['Name']}'>Deletar</a></li>"
         html_content += "</ul>"
 
         return HTMLResponse(content=html_content)
     except ClientError as e:
         return HTTPException(status_code=500, detail=str(e))
 
-@app.delete("/{name}", response_class=HTMLResponse)
-def delete_bet(name: str):
+@app.get("/{name}", response_class=HTMLResponse) # ahref does not support DELETE method, so we use GET ;-;
+async def delete_bet(name: str):
     table = dynamodb.Table('BettingTable')
     # Delete the bet from the table.
     table.delete_item(Key={'Name': name})
-    return HTMLResponse(content=f"<html><body><h1>Bet deleted successfully!</h1><a href='/'>Back to list</a></body></html>")
+    return HTMLResponse(content=f"<html><body><h1>Aposta deletada com sucesso!</h1><a href='/'>Voltar para a lista</a></body></html>")
 
 @app.post("/add_bet", response_class=HTMLResponse)
 async def add_bet(name: Annotated[str, Form()], predicted_time: Annotated[str, Form()]):
-    
+
     table = dynamodb.Table('BettingTable')
 
     table.update_item(
@@ -91,5 +91,5 @@ async def add_bet(name: Annotated[str, Form()], predicted_time: Annotated[str, F
         },
         ReturnValues="UPDATED_NEW"
     )
-    
-    return HTMLResponse(content=f"<html><body><h1>Bet added successfully!</h1><a href='/'>Back to list</a></body></html>")
+
+    return HTMLResponse(content=f"<html><body><h1>Aposta adicionada com sucesso!</h1><a href='/'>Voltar para a lista</a></body></html>")
