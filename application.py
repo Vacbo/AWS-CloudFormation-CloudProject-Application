@@ -22,8 +22,8 @@ def create_table():
                 {'AttributeName': 'Name', 'AttributeType': 'S'}
             ],
             ProvisionedThroughput={
-                'ReadCapacityUnits': 1,
-                'WriteCapacityUnits': 1
+                'ReadCapacityUnits': 5,
+                'WriteCapacityUnits': 5
             }
         )
         # Wait until the table exists.
