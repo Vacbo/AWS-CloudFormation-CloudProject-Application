@@ -5,42 +5,23 @@ from botocore.exceptions import ClientError
 from typing import Annotated
 
 # Initialize a DynamoDB resource and client.
-dynamodb = boto3.resource('dynamodb', endpoint_url='http://localhost:8000')
-dynamodb_client = boto3.client('dynamodb', endpoint_url='http://localhost:8000')
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+dynamodb_client = boto3.client('dynamodb', region_name='us-east-1')
 
-def create_table():
-    # Check if the table already exists.
-    existing_tables = dynamodb_client.list_tables()['TableNames']
-    if 'BettingTable' not in existing_tables:
-        # If the table does not exist, create it.
-        table = dynamodb.create_table(
-            TableName='BettingTable',
-            KeySchema=[
-                {'AttributeName': 'Name', 'KeyType': 'HASH'}  # Partition key
-            ],
-            AttributeDefinitions=[
-                {'AttributeName': 'Name', 'AttributeType': 'S'}
-            ],
-            ProvisionedThroughput={
-                'ReadCapacityUnits': 5,
-                'WriteCapacityUnits': 5
-            }
-        )
-        # Wait until the table exists.
-        table.wait_until_exists()
-        print("Table created successfully.")
-    else:
-        print("Table already exists.")
-
-app = FastAPI(on_startup=[create_table])
+app = FastAPI()
 
 @app.get("/", response_class=HTMLResponse)
 async def read_bets():
     try:
-        table = dynamodb.Table('BettingTable')
+        table = dynamodb.Table('BolaoTable')
         # Scan the table to get all bets
-        response = table.scan()
+        try:
+            response = table.scan()
+        except Exception as e:
+            print(e)
+                
         bets = response.get('Items', [])
+
         # Generate HTML content dynamically
         html_content = """
         <html><body>
@@ -71,7 +52,7 @@ async def read_bets():
 
 @app.get("/{name}", response_class=HTMLResponse) # ahref does not support DELETE method, so we use GET ;-;
 async def delete_bet(name: str):
-    table = dynamodb.Table('BettingTable')
+    table = dynamodb.Table('BolaoTable')
     # Delete the bet from the table.
     table.delete_item(Key={'Name': name})
     return HTMLResponse(content=f"<html><body><h1>Aposta deletada com sucesso!</h1><a href='/'>Voltar para a lista</a></body></html>")
@@ -79,7 +60,7 @@ async def delete_bet(name: str):
 @app.post("/add_bet", response_class=HTMLResponse)
 async def add_bet(name: Annotated[str, Form()], predicted_time: Annotated[str, Form()]):
 
-    table = dynamodb.Table('BettingTable')
+    table = dynamodb.Table('BolaoTable')
 
     table.update_item(
         Key={
