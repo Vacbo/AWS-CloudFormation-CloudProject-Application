@@ -71,3 +71,7 @@ async def add_bet(name: Annotated[str, Form()], predicted_time: Annotated[str, F
     )
 
     return HTMLResponse(content=f"<html><body><h1>Aposta adicionada com sucesso!</h1><a href='/'>Voltar para a lista</a></body></html>")
+
+@app.get("/healthcheck", response_class=HTMLResponse)
+async def healthcheck():
+    return HTMLResponse(status_code=200)
