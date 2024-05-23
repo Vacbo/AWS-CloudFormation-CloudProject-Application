@@ -1,7 +1,7 @@
 from locust import FastHttpUser, task, between
 import random
 import uuid
-from pyquery import PyQuery
+from bs4 import BeautifulSoup
 import logging
 
 class FastAPIUser(FastHttpUser):
@@ -31,17 +31,19 @@ class FastAPIUser(FastHttpUser):
     def delete_bet(self):
         response = self.client.get("/")
         if response.status_code == 200:
-            document = PyQuery(response.content)
-            bet_items = document("li")
-            for item in bet_items.items():
-                name = item.find("span").eq(0).text()
-                if name == self.known_bet_name:
-                    delete_response = self.client.get(f"/{self.known_bet_name}")
-                    if delete_response.status_code == 200:
-                        logging.info(f"Successfully deleted bet: {self.known_bet_name}")
-                    else:
-                        logging.error(f"Failed to delete bet: {delete_response.status_code}")
-                    break
+            content = response.content.decode('utf-8')
+            soup = BeautifulSoup(content, 'html.parser')
+            bet_items = soup.find_all('li')
+            for item in bet_items:
+                spans = item.find_all('span')
+                if spans:
+                    name = spans[0].text
+                    if name == self.known_bet_name:
+                        delete_response = self.client.get(f"/{self.known_bet_name}")
+                        if delete_response.status_code == 200:
+                            logging.info(f"Successfully deleted bet: {self.known_bet_name}")
+                        else:
+                            logging.error(f"Failed to delete bet: {delete_response.status_code}")
         else:
             logging.error(f"Failed to load bets for deletion: {response.status_code}")
 
@@ -54,17 +56,22 @@ class FastAPIUser(FastHttpUser):
         while True:
             response = self.client.get("/")
             if response.status_code == 200:
-                document = PyQuery(response.content)
-                bet_items = document("li")
+                content = response.content.decode('utf-8')
+                soup = BeautifulSoup(content, 'html.parser')
+                bet_items = soup.find_all('li')
                 if not bet_items:
                     break
-                for item in bet_items.items():
-                    name = item.find("span").eq(0).text()
-                    delete_response = self.client.get(f"/{name}")
-                    if delete_response.status_code == 200:
-                        logging.info(f"Successfully deleted bet: {name}")
-                    else:
-                        logging.error(f"Failed to delete bet: {delete_response.status_code}")
+                for item in bet_items:
+                    spans = item.find_all('span')
+                    if spans:
+                        name = spans[0].text
+                        if name == self.known_bet_name:
+                            delete_response = self.client.get(f"/{self.known_bet_name}")
+                            if delete_response.status_code == 200:
+                                logging.info(f"Successfully deleted bet: {self.known_bet_name}")
+                            else:
+                                logging.error(f"Failed to delete bet: {delete_response.status_code}")
+                                break
             else:
                 logging.error(f"Failed to load bets for deletion: {response.status_code}")
                 break
